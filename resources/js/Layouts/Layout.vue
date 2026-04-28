@@ -1,29 +1,61 @@
 <script setup>
 import { ref } from 'vue';
-import { Link } from '@inertiajs/vue3'; // Importante para la navegación SPA
+import { Link } from '@inertiajs/vue3';
 import Button from 'primevue/button';
 import Avatar from 'primevue/avatar';
 import InputText from 'primevue/inputtext';
 
 const isCollapsed = ref(false);
 
-// Añadimos la propiedad 'route' con el nombre de la ruta definida en web.php
 const menuGroups = ref([
     {
         label: 'Dashboards',
         items: [
-            { label: 'E-Commerce', icon: 'pi pi-home', route: 'dashboard', active: route().current('dashboard') }
+            { label: 'Panel Principal', icon: 'pi pi-home', route: 'dashboard', active: route().current('dashboard') }
         ]
     },
     {
-        label: 'Apps',
+        label: 'Gestión de Transporte',
         items: [
-            // Usamos el nombre de la ruta que definiste: 'users.index'
-            { label: 'Usuarios', icon: 'pi pi-users', route: 'users.index', active: route().current('users.*') },
-            { label: 'Boletos', icon: 'pi pi-boletos', route: 'boletos.index', active: route().current('boletos.*') },
-            { label: 'Chat', icon: 'pi pi-comments', route: 'dashboard', active: false },
-            { label: 'Files', icon: 'pi pi-folder', route: 'dashboard', active: false },
-            { label: 'Mail', icon: 'pi pi-envelope', route: 'dashboard', active: false }
+            { label: 'Viajes', icon: 'pi pi-map', route: 'viajes.index', active: route().current('viajes.*') },
+            { label: 'Boletos', icon: 'pi pi-ticket', route: 'boletos.index', active: route().current('boletos.*') },
+            { label: 'Encomiendas', icon: 'pi pi-box', route: 'encomiendas.index', active: route().current('encomiendas.*') },
+            { label: 'Rutas', icon: 'pi pi-directions', route: 'rutas.index', active: route().current('rutas.*') },
+            { label: 'Buses', icon: 'pi pi-truck', route: 'buses.index', active: route().current('buses.*') },
+        ]
+    },
+    {
+        label: 'Personas y Seguridad',
+        items: [
+            { label: 'Usuarios', icon: 'pi pi-user-edit', route: 'users.index', active: route().current('users.*') },
+            { label: 'Clientes', icon: 'pi pi-users', route: 'clientes.index', active: route().current('clientes.*') },
+            { label: 'Empleados', icon: 'pi pi-id-card', route: 'empleados.index', active: route().current('empleados.*') },
+            { label: 'Roles', icon: 'pi pi-shield', route: 'roles.index', active: route().current('roles.*') },
+            { label: 'Asignaciones', icon: 'pi pi-user-plus', route: 'asignaciones.index', active: route().current('asignaciones.*') },
+        ]
+    },
+    {
+        label: 'Finanzas y Control',
+        items: [
+            { label: 'Facturas', icon: 'pi pi-file-pdf', route: 'facturas.index', active: route().current('facturas.*') },
+            { label: 'Detalles Factura', icon: 'pi pi-list', route: 'detalles-factura.index', active: route().current('detalles-factura.*') },
+            { label: 'Métodos de Pago', icon: 'pi pi-credit-card', route: 'metodos-pago.index', active: route().current('metodos-pago.*') },
+        ]
+    },
+    {
+        label: 'Mantenimiento y Otros',
+        items: [
+            { label: 'Mantenimientos', icon: 'pi pi-cog', route: 'mantenimientos.index', active: route().current('mantenimientos.*') },
+            { label: 'Tipos Mant.', icon: 'pi pi-wrench', route: 'tipos-mantenimiento.index', active: route().current('tipos-mantenimiento.*') },
+            { label: 'Terminales', icon: 'pi pi-building', route: 'terminales.index', active: route().current('terminales.*') },
+            { label: 'Notificaciones', icon: 'pi pi-bell', route: 'notificaciones.index', active: route().current('notificaciones.*') },
+        ]
+    },
+    {
+        label: 'Sistema',
+        items: [
+            // Corregido: Ahora apunta a la ruta de respaldos y detecta el estado activo
+            { label: 'Respaldos', icon: 'pi pi-database', route: 'respaldos.index', active: route().current('respaldos.*') },
         ]
     }
 ]);
@@ -39,12 +71,12 @@ const menuGroups = ref([
         >
             <Link :href="route('dashboard')" class="p-6 flex items-center gap-3 hover:opacity-80 transition-opacity">
                 <div class="h-8 w-8 bg-indigo-500 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.5)]">
-                    <i class="pi pi-bolt text-white"></i>
+                    <i class="pi pi-bolt text-white text-lg"></i>
                 </div>
                 <span v-if="!isCollapsed" class="font-bold text-xl text-white tracking-tight">Atlantis</span>
             </Link>
 
-            <nav class="flex-1 overflow-y-auto px-4 py-2 custom-scrollbar">
+            <nav class="flex-1 overflow-y-auto px-4 py-2 custom-scrollbar overflow-x-hidden">
                 <div v-for="group in menuGroups" :key="group.label" class="mb-6">
                     <p v-if="!isCollapsed" class="text-[10px] uppercase tracking-[2px] text-slate-500 font-bold mb-4 px-2">
                         {{ group.label }}
@@ -53,21 +85,25 @@ const menuGroups = ref([
                         <Link 
                             v-for="item in group.items" 
                             :key="item.label"
-                            :href="route(item.route)"
+                            :href="item.route ? route(item.route) : '#'"
                             :class="[
-                                'flex items-center p-3 rounded-xl transition-all group',
+                                'flex items-center p-3 rounded-xl transition-all group relative',
                                 item.active ? 'bg-white/5 text-white shadow-sm border border-white/5' : 'hover:bg-white/5 text-slate-400 hover:text-slate-200'
                             ]"
                         >
                             <i :class="[item.icon, item.active ? 'text-indigo-400' : 'group-hover:text-slate-300', 'text-lg']"></i>
-                            <span v-if="!isCollapsed" class="ml-4 font-medium text-sm">{{ item.label }}</span>
+                            <span v-if="!isCollapsed" class="ml-4 font-medium text-sm whitespace-nowrap">{{ item.label }}</span>
+                            
+                            <div v-if="isCollapsed" class="absolute left-full ml-4 bg-indigo-600 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity z-50">
+                                {{ item.label }}
+                            </div>
                         </Link>
                     </div>
                 </div>
             </nav>
 
             <div class="p-4 border-t border-white/5">
-                <Button @click="isCollapsed = !isCollapsed" icon="pi pi-bars" class="w-full !bg-transparent !border-none !text-slate-500 hover:!text-white" />
+                <Button @click="isCollapsed = !isCollapsed" :icon="isCollapsed ? 'pi pi-chevron-right' : 'pi pi-chevron-left'" class="w-full !bg-transparent !border-none !text-slate-500 hover:!text-white" />
             </div>
         </aside>
 
@@ -98,3 +134,19 @@ const menuGroups = ref([
         </main>
     </div>
 </template>
+
+<style>
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.2);
+}
+</style>

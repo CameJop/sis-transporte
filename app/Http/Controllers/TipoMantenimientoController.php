@@ -2,63 +2,56 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\TipoMantenimiento;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redirect;
+use Inertia\Inertia;
 
 class TipoMantenimientoController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        return Inertia::render('TiposMantenimiento/Index', [
+            'tipos' => TipoMantenimiento::orderBy('id_tipo_mant', 'desc')->get()
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $data = $request->validate([
+            'nombre'      => 'required|string|max:100|unique:TIPO_MANTENIMIENTO,nombre',
+            'descripcion' => 'nullable|string|max:200',
+        ]);
+
+        TipoMantenimiento::create($data);
+
+        return Redirect::route('tipos-mantenimiento.index');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function update(Request $request, $id)
     {
-        //
+        $tipo = TipoMantenimiento::findOrFail($id);
+        
+        $data = $request->validate([
+            'nombre'      => 'required|string|max:100|unique:TIPO_MANTENIMIENTO,nombre,' . $id . ',id_tipo_mant',
+            'descripcion' => 'nullable|string|max:200',
+        ]);
+
+        $tipo->update($data);
+
+        return Redirect::route('tipos-mantenimiento.index');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function destroy($id)
     {
-        //
-    }
+        $tipo = TipoMantenimiento::findOrFail($id);
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
+        // Validar si existen mantenimientos registrados con este tipo
+        if ($tipo->mantenimientos()->exists()) {
+            return back()->withErrors(['error' => 'No se puede eliminar el tipo porque existen registros vinculados a buses.']);
+        }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $tipo->delete();
+        return Redirect::route('tipos-mantenimiento.index');
     }
 }

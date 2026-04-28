@@ -11,10 +11,7 @@ class Boleto extends Model
 
     protected $table = 'BOLETO';
     protected $primaryKey = 'id_boleto';
-    
-    // Como tu SQL tiene DEFAULT CURRENT_TIMESTAMP, 
-    // si no tienes updated_at, puedes desactivar timestamps o manejarlos así:
-    public $timestamps = false;
+    public $timestamps = false; // Usamos el default de la DB para fecha_compra
 
     protected $fillable = [
         'id_viaje',
@@ -24,17 +21,11 @@ class Boleto extends Model
         'fecha_compra'
     ];
 
-    /**
-     * Relación con el Viaje
-     */
     public function viaje()
     {
         return $this->belongsTo(Viaje::class, 'id_viaje');
     }
 
-    /**
-     * Relación con el Cliente
-     */
     public function cliente()
     {
         return $this->belongsTo(Cliente::class, 'id_cliente');

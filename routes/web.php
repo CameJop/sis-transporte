@@ -2,10 +2,10 @@
 
 use App\Http\Controllers\{
     TerminalController, MetodoPagoController, TipoMantenimientoController,
-    EmpleadoController, ClienteController, RolController, UsuarioController,
+    EmpleadoController, ClienteController, RolController, 
     BusController, RutaController, ViajeController, AsignacionController,
     BoletoController, FacturaController, DetalleFacturaController,
-    EncomiendaController, MantenimientoController, NotificacionController
+    EncomiendaController, MantenimientoController, NotificacionController,RespaldoController
 };
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
@@ -40,7 +40,6 @@ Route::resource('metodos-pago', MetodoPagoController::class);
 Route::resource('tipos-mantenimiento', TipoMantenimientoController::class);
 Route::resource('empleados', EmpleadoController::class);
 Route::resource('roles', RolController::class);
-Route::resource('usuarios', UsuarioController::class);
 Route::resource('buses', BusController::class);
 Route::resource('rutas', RutaController::class);
 Route::resource('asignaciones', AsignacionController::class);
@@ -50,5 +49,6 @@ Route::resource('detalles-factura', DetalleFacturaController::class);
 Route::resource('encomiendas', EncomiendaController::class);
 Route::resource('mantenimientos', MantenimientoController::class);
 Route::resource('notificaciones', NotificacionController::class);
+Route::resource('respaldos', RespaldoController::class);
 
 require __DIR__.'/auth.php';

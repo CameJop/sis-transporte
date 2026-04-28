@@ -2,63 +2,56 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Empleado;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redirect;
+use Inertia\Inertia;
 
 class EmpleadoController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        return Inertia::render('Empleados/Index', [
+            'empleados' => Empleado::latest('id_empleado')->get()
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $data = $request->validate([
+            'nombre'   => 'required|string|max:100',
+            'telefono' => 'nullable|string|max:20',
+            'licencia' => 'nullable|string|max:50',
+            'rol'      => 'required|in:EMPLEADO,CONDUCTOR',
+            'estado'   => 'required|string'
+        ]);
+
+        Empleado::create($data);
+
+        return Redirect::route('empleados.index');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function update(Request $request, $id)
     {
-        //
+        $empleado = Empleado::findOrFail($id);
+
+        $data = $request->validate([
+            'nombre'   => 'required|string|max:100',
+            'telefono' => 'nullable|string|max:20',
+            'licencia' => 'nullable|string|max:50',
+            'rol'      => 'required|in:EMPLEADO,CONDUCTOR',
+            'estado'   => 'required|string'
+        ]);
+
+        $empleado->update($data);
+
+        return Redirect::route('empleados.index');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function destroy($id)
     {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        // Nota: En un sistema real, podrías verificar si tiene viajes pendientes antes de eliminar
+        Empleado::findOrFail($id)->delete();
+        return Redirect::route('empleados.index');
     }
 }

@@ -11,8 +11,6 @@ class Cliente extends Model
 
     protected $table = 'CLIENTE';
     protected $primaryKey = 'id_cliente';
-    
-    // Si tu tabla no tiene las columnas created_at/updated_at, usa false.
     public $timestamps = false;
 
     protected $fillable = [
@@ -23,7 +21,7 @@ class Cliente extends Model
     ];
 
     /**
-     * Relación: Un cliente puede comprar muchos boletos
+     * Un cliente puede comprar muchos boletos
      */
     public function boletos()
     {
@@ -31,10 +29,10 @@ class Cliente extends Model
     }
 
     /**
-     * Relación: Un cliente puede enviar muchas encomiendas
+     * Un cliente puede tener muchas facturas
      */
-    public function encomiendasEnviadas()
+    public function facturas()
     {
-        return $this->hasMany(Encomienda::class, 'id_cliente_remitente');
+        return $this->hasMany(Factura::class, 'id_cliente');
     }
 }

@@ -5,15 +5,16 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redirect;
+use Inertia\Inertia;
 
 class UserController extends Controller
 {
-public function index()
+    public function index()
     {
-        $users = User::latest()->get(['id', 'name', 'email', 'created_at']);
-
-        return inertia('Users/Index', [
-            'users' => $users
+        return Inertia::render('Users/Index', [
+            // Ordenamos por ID descendente para que coincida con la base de datos
+            'users' => User::orderBy('id', 'desc')->get(['id', 'name', 'email', 'created_at'])
         ]);
     }
 
@@ -31,11 +32,13 @@ public function index()
             'password' => Hash::make($data['password']),
         ]);
 
-        return redirect()->route('users.index');
+        return Redirect::route('users.index');
     }
 
-    public function update(Request $request, User $user)
+    public function update(Request $request, $id)
     {
+        $user = User::findOrFail($id);
+
         $data = $request->validate([
             'name'  => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
@@ -51,13 +54,12 @@ public function index()
 
         $user->save();
 
-        return redirect()->route('users.index');
+        return Redirect::route('users.index');
     }
 
-    public function destroy(User $user)
+    public function destroy($id)
     {
-        $user->delete();
-
-        return redirect()->route('users.index');
+        User::findOrFail($id)->delete();
+        return Redirect::route('users.index');
     }
 }

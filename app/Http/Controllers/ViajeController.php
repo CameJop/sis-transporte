@@ -7,35 +7,32 @@ use App\Models\Ruta;
 use App\Models\Bus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
+use Inertia\Inertia;
 
 class ViajeController extends Controller
 {
-    /**
-     * Listado de viajes programados
-     */
     public function index()
     {
-        return inertia('Viajes/Index', [
-            // Cargamos relaciones anidadas: viaje -> ruta -> terminales
+        return Inertia::render('Viajes/Index', [
+            // Cargamos ruta Y sus terminales anidadas (origen y destino)
             'viajes' => Viaje::with(['ruta.origen', 'ruta.destino', 'bus'])
-                        ->latest('id_viaje')
-                        ->get(),
-            'rutas'  => Ruta::with(['origen', 'destino'])->get(),
-            'buses'  => Bus::where('estado', 'ACTIVO')->get()
+                ->orderBy('id_viaje', 'desc')
+                ->get(),
+
+            // Cargamos también los nombres para los Dropdowns del formulario
+            'rutas' => Ruta::with(['origen', 'destino'])->get(),
+
+            'buses' => Bus::all(),
         ]);
     }
-
-    /**
-     * Crear un nuevo viaje
-     */
     public function store(Request $request)
     {
         $data = $request->validate([
             'id_ruta'      => 'required|exists:RUTA,id_ruta',
-            'id_bus'        => 'required|exists:BUS,id_bus',
-            'fecha_salida'  => 'required|date|after_or_equal:today',
-            'hora_salida'   => 'required',
-            'estado'        => 'required|string|in:PROGRAMADO,EN_CURSO,FINALIZADO',
+            'id_bus'       => 'required|exists:BUS,id_bus',
+            'fecha_salida' => 'required|date',
+            'hora_salida'  => 'required',
+            'estado'       => 'required|in:PROGRAMADO,EN_CURSO,FINALIZADO'
         ]);
 
         Viaje::create($data);
@@ -43,19 +40,16 @@ class ViajeController extends Controller
         return Redirect::route('viajes.index');
     }
 
-    /**
-     * Actualizar estado o datos del viaje
-     */
     public function update(Request $request, $id)
     {
         $viaje = Viaje::findOrFail($id);
 
         $data = $request->validate([
-            'id_ruta'      => 'required',
-            'id_bus'        => 'required',
-            'fecha_salida'  => 'required|date',
-            'hora_salida'   => 'required',
-            'estado'        => 'required',
+            'id_ruta'      => 'required|exists:RUTA,id_ruta',
+            'id_bus'       => 'required|exists:BUS,id_bus',
+            'fecha_salida' => 'required|date',
+            'hora_salida'  => 'required',
+            'estado'       => 'required|in:PROGRAMADO,EN_CURSO,FINALIZADO'
         ]);
 
         $viaje->update($data);
@@ -63,18 +57,9 @@ class ViajeController extends Controller
         return Redirect::route('viajes.index');
     }
 
-    /**
-     * Eliminar un viaje (si no tiene boletos vendidos)
-     */
     public function destroy($id)
     {
-        $viaje = Viaje::findOrFail($id);
-        
-        // Opcional: Validar que no tenga boletos antes de borrar
-        // if($viaje->boletos()->exists()) { ... error ... }
-
-        $viaje->delete();
-
+        Viaje::findOrFail($id)->delete();
         return Redirect::route('viajes.index');
     }
 }

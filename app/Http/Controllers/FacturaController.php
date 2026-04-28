@@ -2,63 +2,54 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Factura;
+use App\Models\Cliente;
+use App\Models\Empleado;
+use App\Models\MetodoPago;
 use Illuminate\Http\Request;
+use Inertia\Inertia;
 
 class FacturaController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    // FacturaController.php
+
     public function index()
     {
-        //
+        return Inertia::render('Facturas/Index', [
+            'facturas' => Factura::with(['cliente', 'empleado', 'metodo_pago'])
+                ->orderBy('id_factura', 'desc') // <-- Cambio aquí: de asc a desc
+                ->get(),
+            'clientes' => Cliente::orderBy('nombre')->get(),
+            'empleados' => Empleado::orderBy('nombre')->get(),
+            'metodos_pago' => MetodoPago::all(),
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'id_cliente' => 'required|exists:clientes,id_cliente',
+            'id_empleado' => 'required|exists:empleados,id_empleado',
+            'id_metodo_pago' => 'required|exists:metodos_pago,id_metodo_pago',
+            'fecha' => 'required|date',
+        ]);
+
+        try {
+            Factura::create($validated);
+            return redirect()->back();
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => 'No se pudo generar la factura.']);
+        }
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function destroy($id)
     {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        try {
+            $factura = Factura::findOrFail($id);
+            $factura->delete();
+            return redirect()->back();
+        } catch (\Exception $e) {
+            return redirect()->back()->withErrors(['error' => 'La factura tiene detalles vinculados y no puede eliminarse.']);
+        }
     }
 }

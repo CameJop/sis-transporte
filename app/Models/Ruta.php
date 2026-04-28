@@ -11,7 +11,6 @@ class Ruta extends Model
 
     protected $table = 'RUTA';
     protected $primaryKey = 'id_ruta';
-    
     public $timestamps = false;
 
     protected $fillable = [
@@ -21,27 +20,11 @@ class Ruta extends Model
         'duracion_estimada'
     ];
 
-    /**
-     * Relación: La terminal donde inicia la ruta
-     */
-    public function origen()
-    {
+    public function origen() {
         return $this->belongsTo(Terminal::class, 'id_origen');
     }
 
-    /**
-     * Relación: La terminal donde termina la ruta
-     */
-    public function destino()
-    {
+    public function destino() {
         return $this->belongsTo(Terminal::class, 'id_destino');
-    }
-
-    /**
-     * Relación: Una ruta puede ser usada en muchos viajes
-     */
-    public function viajes()
-    {
-        return $this->hasMany(Viaje::class, 'id_ruta');
     }
 }

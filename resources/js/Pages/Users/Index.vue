@@ -1,12 +1,15 @@
 <script setup>
+import { ref } from 'vue';
+import { useForm, Head } from '@inertiajs/vue3';
 import Layout from '@/Layouts/Layout.vue';
-import { useForm } from '@inertiajs/vue3';
+
+// PrimeVue
 import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
-import { ref } from 'vue';
+import Tag from 'primevue/tag';
 
 // Recibimos los usuarios desde Laravel
 defineProps({ users: Array });
@@ -31,6 +34,7 @@ const editUser = (user) => {
     form.id = user.id;
     form.name = user.name;
     form.email = user.email;
+    form.password = ''; // No cargar la contraseña por seguridad
     editMode.value = true;
     displayModal.value = true;
 };
@@ -48,67 +52,168 @@ const submit = () => {
 };
 
 const deleteUser = (id) => {
-    if (confirm('¿Estás seguro?')) {
+    if (confirm('¿Estás seguro de eliminar este acceso?')) {
         form.delete(route('users.destroy', id));
     }
 };
 </script>
 
 <template>
+    <Head title="Gestión de Usuarios" />
     <Layout>
-        <div class="bg-[#1a1d2b] p-8 rounded-[2rem] border border-white/5 shadow-xl">
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-bold text-white">Gestión de Usuarios</h1>
-                <Button label="Nuevo Usuario" icon="pi pi-plus" @click="openModal" class="!rounded-xl" />
+        <div class="bg-[#1a1d2b] p-8 rounded-[2rem] border border-white/5 shadow-2xl min-h-[70vh]">
+            
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
+                <div>
+                    <h1 class="text-2xl font-bold text-white tracking-tight flex items-center gap-3">
+                        <i class="pi pi-shield text-indigo-500"></i>
+                        Cuentas de Usuario
+                    </h1>
+                    <p class="text-slate-500 text-sm mt-1">Administración de credenciales y acceso al sistema.</p>
+                </div>
+                <Button label="Nuevo Usuario" icon="pi pi-user-plus" @click="openModal" 
+                    class="!bg-indigo-600 !border-none !rounded-xl !px-6 !py-3 shadow-lg shadow-indigo-500/20 hover:!bg-indigo-500 transition-all" />
             </div>
 
-            <DataTable :value="users" class="p-datatable-sm" responsiveLayout="stack">
-                <Column field="name" header="Nombre" class="text-slate-300"></Column>
-                <Column field="email" header="Email"></Column>
-                <Column header="Acciones">
-                    <template #body="slotProps">
-                        <div class="flex gap-2">
-                            <Button icon="pi pi-pencil" severity="warning" text @click="editUser(slotProps.data)" />
-                            <Button icon="pi pi-trash" severity="danger" text @click="deleteUser(slotProps.data.id)" />
+            <DataTable :value="users" paginator :rows="10" class="p-datatable-atlantis" responsiveLayout="stack">
+                <Column header="ID" class="w-16 text-slate-500 text-xs font-mono">
+                    <template #body="{ data }">
+                        {{ data.id }}
+                    </template>
+                </Column>
+                
+                <Column header="USUARIO / PERFIL">
+                    <template #body="{ data }">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20 shadow-inner">
+                                <span class="font-bold text-sm">{{ data.name.charAt(0).toUpperCase() }}</span>
+                            </div>
+                            <div class="flex flex-col">
+                                <span class="font-semibold text-white tracking-wide">{{ data.name }}</span>
+                                <span class="text-[10px] text-slate-500 uppercase tracking-widest font-medium">Acceso Autorizado</span>
+                            </div>
+                        </div>
+                    </template>
+                </Column>
+
+                <Column header="CORREO ELECTRÓNICO">
+                    <template #body="{ data }">
+                        <div class="flex items-center gap-2">
+                            <i class="pi pi-envelope text-slate-600 text-xs"></i>
+                            <span class="text-slate-300 font-mono text-sm">{{ data.email }}</span>
+                        </div>
+                    </template>
+                </Column>
+
+                <Column header="ESTADO">
+                    <template #body>
+                        <Tag value="ACTIVO" class="!bg-emerald-500/10 !text-emerald-400 !border !border-emerald-500/20 !px-3 !py-1" rounded />
+                    </template>
+                </Column>
+
+                <Column header="ACCIONES" class="text-right w-32">
+                    <template #body="{ data }">
+                        <div class="flex justify-end gap-1">
+                            <Button icon="pi pi-pencil" text rounded severity="secondary" @click="editUser(data)" 
+                                class="hover:!bg-white/5 transition-colors" />
+                            <Button icon="pi pi-trash" text rounded severity="danger" @click="deleteUser(data.id)"
+                                class="hover:!bg-red-500/5 transition-colors" />
                         </div>
                     </template>
                 </Column>
             </DataTable>
         </div>
 
-        <Dialog v-model:visible="displayModal" :header="editMode ? 'Editar Usuario' : 'Nuevo Usuario'" modal class="p-dark w-full max-w-md">
-            <div class="flex flex-col gap-4 pt-4">
+        <Dialog v-model:visible="displayModal" :header="editMode ? 'Editar Perfil de Usuario' : 'Registrar Nuevo Acceso'" modal 
+            class="p-dark w-full max-w-md"
+            :pt="{ 
+                root: { class: 'bg-[#1a1d2b] border border-white/10 shadow-2xl rounded-[1.5rem] overflow-hidden' },
+                header: { class: 'bg-[#1a1d2b] text-white border-b border-white/5 p-6' },
+                content: { class: 'bg-[#1a1d2b] text-white p-6' }
+            }">
+            
+            <form @submit.prevent="submit" class="grid grid-cols-1 gap-6 pt-2">
                 <div class="flex flex-col gap-2">
-                    <label class="text-sm">Nombre</label>
-                    <InputText v-model="form.name" class="w-full" />
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Nombre Completo</label>
+                    <div class="relative">
+                        <i class="pi pi-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                        <InputText v-model="form.name" placeholder="Ej. Juan Perez" 
+                            class="w-full !bg-[#0f111a] !border-white/10 !text-white focus:!border-indigo-500 !pl-11 !py-3 !rounded-xl" />
+                    </div>
+                    <small v-if="form.errors.name" class="text-red-400 text-[10px]">{{ form.errors.name }}</small>
                 </div>
+
                 <div class="flex flex-col gap-2">
-                    <label class="text-sm">Email</label>
-                    <InputText v-model="form.email" class="w-full" />
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Correo Institucional</label>
+                    <div class="relative">
+                        <i class="pi pi-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                        <InputText v-model="form.email" type="email" placeholder="usuario@empresa.com"
+                            class="w-full !bg-[#0f111a] !border-white/10 !text-white focus:!border-indigo-500 !pl-11 !py-3 !rounded-xl" />
+                    </div>
+                    <small v-if="form.errors.email" class="text-red-400 text-[10px]">{{ form.errors.email }}</small>
                 </div>
-                <div v-if="!editMode" class="flex flex-col gap-2">
-                    <label class="text-sm">Contraseña</label>
-                    <InputText v-model="form.password" type="password" class="w-full" />
+
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                        {{ editMode ? 'Nueva Contraseña (Opcional)' : 'Contraseña de Acceso' }}
+                    </label>
+                    <div class="relative">
+                        <i class="pi pi-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                        <InputText v-model="form.password" type="password" 
+                            placeholder="••••••••"
+                            class="w-full !bg-[#0f111a] !border-white/10 !text-white focus:!border-indigo-500 !pl-11 !py-3 !rounded-xl" />
+                    </div>
+                    <small v-if="form.errors.password" class="text-red-400 text-[10px]">{{ form.errors.password }}</small>
+                    <p v-if="editMode" class="text-[10px] text-slate-500 italic px-1">Dejar vacío para conservar la contraseña actual.</p>
                 </div>
-                <Button :label="editMode ? 'Actualizar' : 'Guardar'" @click="submit" :loading="form.processing" class="mt-4" />
-            </div>
+
+                <div class="flex justify-end gap-3 mt-4">
+                    <Button label="Cancelar" text severity="secondary" @click="displayModal = false" class="!text-slate-400" />
+                    <Button :label="editMode ? 'Actualizar Datos' : 'Crear Cuenta'" type="submit" 
+                        icon="pi pi-check" :loading="form.processing" 
+                        class="!bg-indigo-600 !border-none !rounded-xl !px-6 shadow-lg shadow-indigo-500/20" />
+                </div>
+            </form>
         </Dialog>
     </Layout>
 </template>
 
 <style scoped>
-/* Ajuste para que la tabla combine con el modo oscuro */
-:deep(.p-datatable) {
-    background: transparent;
-}
+:deep(.p-datatable-atlantis) { background: transparent; }
+
 :deep(.p-datatable-thead > tr > th) {
-    background: rgba(255, 255, 255, 0.02);
-    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.02) !important;
+    color: #818cf8 !important;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 1.25rem 1rem;
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
+
 :deep(.p-datatable-tbody > tr) {
-    background: transparent;
+    background: transparent !important;
     color: #cbd5e1;
     border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+    transition: all 0.2s;
+}
+
+:deep(.p-datatable-tbody > tr:hover) {
+    background: rgba(255, 255, 255, 0.01) !important;
+}
+
+:deep(.p-paginator) {
+    background: transparent !important;
+    border: none;
+    padding: 1.5rem 0;
+}
+
+:deep(.p-paginator button) { color: #64748b !important; }
+
+:deep(.p-paginator .p-paginator-pages .p-paginator-page.p-highlight) {
+    background: rgba(99, 102, 241, 0.1) !important;
+    color: #818cf8 !important;
+    border-radius: 10px;
 }
 </style>

@@ -2,63 +2,54 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Notificacion;
+use App\Models\Cliente;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Redirect;
+use Inertia\Inertia;
 
 class NotificacionController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
-        //
+        return Inertia::render('Notificaciones/Index', [
+            'notificaciones' => Notificacion::with('cliente')->latest('id_notificacion')->get(),
+            'clientes' => Cliente::all()
+        ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $data = $request->validate([
+            'id_cliente' => 'required|exists:CLIENTE,id_cliente',
+            'mensaje'    => 'required|string|max:255',
+            'fecha'      => 'nullable|date',
+        ]);
+
+        $data['leido'] = false;
+        $data['fecha'] = $data['fecha'] ?? now();
+
+        Notificacion::create($data);
+
+        return Redirect::route('notificaciones.index');
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function update(Request $request, $id)
     {
-        //
+        $notificacion = Notificacion::findOrFail($id);
+        
+        $data = $request->validate([
+            'leido' => 'required|boolean'
+        ]);
+
+        $notificacion->update($data);
+
+        return Redirect::route('notificaciones.index');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function destroy($id)
     {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        Notificacion::findOrFail($id)->delete();
+        return Redirect::route('notificaciones.index');
     }
 }

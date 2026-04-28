@@ -6,32 +6,30 @@ use App\Models\Ruta;
 use App\Models\Terminal;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
+use Inertia\Inertia;
 
 class RutaController extends Controller
 {
-    /**
-     * Listado de rutas con sus terminales
-     */
     public function index()
     {
-        return inertia('Rutas/Index', [
-            'rutas' => Ruta::with(['origen', 'destino'])->get(),
-            'terminales' => Terminal::all(['id_terminal', 'nombre', 'ciudad'])
+        return Inertia::render('Rutas/Index', [
+            // Ordenamos por id_ruta de forma descendente para que los nuevos (o el 10) salgan primero
+            'rutas' => Ruta::with(['origen', 'destino'])
+                ->orderBy('id_ruta', 'desc')
+                ->get(),
+            'terminales' => Terminal::all()
         ]);
     }
 
-    /**
-     * Registrar una nueva ruta
-     */
     public function store(Request $request)
     {
         $data = $request->validate([
-            'id_origen'         => 'required|exists:TERMINAL,id_terminal',
-            'id_destino'        => 'required|exists:TERMINAL,id_terminal|different:id_origen',
+            'id_origen'         => 'required|exists:TERMINAL,id_terminal|different:id_destino',
+            'id_destino'        => 'required|exists:TERMINAL,id_terminal',
             'distancia'         => 'nullable|numeric|min:0',
-            'duracion_estimada' => 'nullable|numeric|min:0',
+            'duracion_estimada' => 'nullable|numeric|min:0'
         ], [
-            'id_destino.different' => 'El destino no puede ser igual al origen.'
+            'id_origen.different' => 'El origen y el destino no pueden ser el mismo.'
         ]);
 
         Ruta::create($data);
@@ -39,18 +37,15 @@ class RutaController extends Controller
         return Redirect::route('rutas.index');
     }
 
-    /**
-     * Actualizar datos de la ruta
-     */
     public function update(Request $request, $id)
     {
         $ruta = Ruta::findOrFail($id);
-
+        
         $data = $request->validate([
-            'id_origen'         => 'required',
-            'id_destino'        => 'required|different:id_origen',
-            'distancia'         => 'required|numeric',
-            'duracion_estimada' => 'required|numeric',
+            'id_origen'         => 'required|exists:TERMINAL,id_terminal|different:id_destino',
+            'id_destino'        => 'required|exists:TERMINAL,id_terminal',
+            'distancia'         => 'nullable|numeric|min:0',
+            'duracion_estimada' => 'nullable|numeric|min:0'
         ]);
 
         $ruta->update($data);
@@ -58,20 +53,9 @@ class RutaController extends Controller
         return Redirect::route('rutas.index');
     }
 
-    /**
-     * Eliminar una ruta
-     */
     public function destroy($id)
     {
-        $ruta = Ruta::findOrFail($id);
-        
-        // Verifica si la ruta ya está siendo usada en viajes antes de borrar
-        if($ruta->viajes()->exists()) {
-            return back()->withErrors(['error' => 'No se puede eliminar una ruta que tiene viajes programados.']);
-        }
-
-        $ruta->delete();
-
+        Ruta::findOrFail($id)->delete();
         return Redirect::route('rutas.index');
     }
 }
