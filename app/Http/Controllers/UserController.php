@@ -7,14 +7,34 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
+use Illuminate\Routing\Controllers\HasMiddleware;
+use Illuminate\Routing\Controllers\Middleware;
 
-class UserController extends Controller
+class UserController extends Controller implements HasMiddleware
 {
+
+    public static function middleware(): array
+    {
+        return [
+            new Middleware('can:ver usuarios', only: ['index', 'show']),
+            new Middleware('can:crear usuarios', only: ['store']),
+            new Middleware('can:editar usuarios', only: ['update']),
+            new Middleware('can:eliminar usuarios', only: ['destroy']),
+        ];
+    }
+
     public function index()
     {
-        return Inertia::render('Users/Index', [
-            // Ordenamos por ID descendente para que coincida con la base de datos
-            'users' => User::orderBy('id', 'desc')->get(['id', 'name', 'email', 'created_at'])
+        $users = User::with(['roles:id,name', 'permissions:id,name'])
+            ->orderBy('id', 'desc')
+            ->get(['id', 'name', 'email', 'created_at']);
+
+        return inertia('Users/Index', [
+            'users'       => $users,
+            'roles'       => Role::all(['id', 'name']),
+            'permissions' => Permission::all(['id', 'name']),
         ]);
     }
 
@@ -24,25 +44,33 @@ class UserController extends Controller
             'name'     => 'required|string|max:255',
             'email'    => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
+            'role'     => 'required|exists:roles,name',
+            'user_permissions' => 'nullable|array',
         ]);
 
-        User::create([
+        $user = User::create([
             'name'     => $data['name'],
             'email'    => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
 
-        return Redirect::route('users.index');
+        $user->assignRole($data['role']);
+
+        if (!empty($data['user_permissions'])) {
+            $user->givePermissionTo($data['user_permissions']);
+        }
+
+        return redirect()->route('users.index');
     }
 
-    public function update(Request $request, $id)
+    public function update(Request $request, User $user)
     {
-        $user = User::findOrFail($id);
-
         $data = $request->validate([
             'name'  => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
-            'password' => 'nullable|string|min:8', 
+            'password' => 'nullable|string|min:8',
+            'role'  => 'required|exists:roles,name',
+            'user_permissions' => 'nullable|array',
         ]);
 
         $user->name = $data['name'];
@@ -53,13 +81,17 @@ class UserController extends Controller
         }
 
         $user->save();
+        $user->syncRoles($data['role']);
 
-        return Redirect::route('users.index');
+        $user->syncPermissions($data['user_permissions'] ?? []);
+
+        return redirect()->route('users.index');
     }
 
-    public function destroy($id)
+    public function destroy(User $user)
     {
-        User::findOrFail($id)->delete();
-        return Redirect::route('users.index');
+        $user->delete();
+
+        return redirect()->route('users.index');
     }
 }

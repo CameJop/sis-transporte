@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue';
-import { useForm, Head } from '@inertiajs/vue3';
+import { useForm, Head, usePage } from '@inertiajs/vue3';
 import Layout from '@/Layouts/Layout.vue';
 
 // PrimeVue
@@ -10,9 +10,20 @@ import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
 import InputText from 'primevue/inputtext';
 import Tag from 'primevue/tag';
+import Dropdown from 'primevue/dropdown';
+import MultiSelect from 'primevue/multiselect';
 
-// Recibimos los usuarios desde Laravel
-defineProps({ users: Array });
+// Props desde Laravel
+const props = defineProps({ 
+    users: Array, 
+    roles: Array,
+    permissions: Array 
+});
+
+// Verificación de permisos (Frontend)
+const can = (permission) => {
+    return usePage().props.auth.user.permissions.includes(permission);
+};
 
 const displayModal = ref(false);
 const editMode = ref(false);
@@ -22,6 +33,8 @@ const form = useForm({
     name: '',
     email: '',
     password: '',
+    role: '',
+    user_permissions: [],
 });
 
 const openModal = () => {
@@ -34,7 +47,12 @@ const editUser = (user) => {
     form.id = user.id;
     form.name = user.name;
     form.email = user.email;
-    form.password = ''; // No cargar la contraseña por seguridad
+    form.password = ''; 
+    // Asignar rol actual (si tiene)
+    form.role = user.roles.length > 0 ? user.roles[0].name : '';
+    // Mapear nombres de permisos extra
+    form.user_permissions = user.permissions ? user.permissions.map(p => p.name) : [];
+    
     editMode.value = true;
     displayModal.value = true;
 };
@@ -69,10 +87,11 @@ const deleteUser = (id) => {
                         <i class="pi pi-shield text-indigo-500"></i>
                         Cuentas de Usuario
                     </h1>
-                    <p class="text-slate-500 text-sm mt-1">Administración de credenciales y acceso al sistema.</p>
+                    <p class="text-slate-500 text-sm mt-1">Administración de niveles de acceso y permisos extra.</p>
                 </div>
-                <Button label="Nuevo Usuario" icon="pi pi-user-plus" @click="openModal" 
-                    class="!bg-indigo-600 !border-none !rounded-xl !px-6 !py-3 shadow-lg shadow-indigo-500/20 hover:!bg-indigo-500 transition-all" />
+                <Button v-if="can('crear usuarios')" 
+                        label="Nuevo Usuario" icon="pi pi-user-plus" @click="openModal" 
+                        class="!bg-indigo-600 !border-none !rounded-xl !px-6 !py-3 shadow-lg shadow-indigo-500/20 hover:!bg-indigo-500 transition-all" />
             </div>
 
             <DataTable :value="users" paginator :rows="10" class="p-datatable-atlantis" responsiveLayout="stack">
@@ -82,25 +101,16 @@ const deleteUser = (id) => {
                     </template>
                 </Column>
                 
-                <Column header="USUARIO / PERFIL">
+                <Column header="USUARIO">
                     <template #body="{ data }">
                         <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20 shadow-inner">
+                            <div class="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 border border-indigo-500/20">
                                 <span class="font-bold text-sm">{{ data.name.charAt(0).toUpperCase() }}</span>
                             </div>
                             <div class="flex flex-col">
                                 <span class="font-semibold text-white tracking-wide">{{ data.name }}</span>
-                                <span class="text-[10px] text-slate-500 uppercase tracking-widest font-medium">Acceso Autorizado</span>
+                                <span class="text-[10px] text-slate-500 font-mono tracking-widest">{{ data.email }}</span>
                             </div>
-                        </div>
-                    </template>
-                </Column>
-
-                <Column header="CORREO ELECTRÓNICO">
-                    <template #body="{ data }">
-                        <div class="flex items-center gap-2">
-                            <i class="pi pi-envelope text-slate-600 text-xs"></i>
-                            <span class="text-slate-300 font-mono text-sm">{{ data.email }}</span>
                         </div>
                     </template>
                 </Column>
@@ -111,13 +121,28 @@ const deleteUser = (id) => {
                     </template>
                 </Column>
 
+                <Column header="ROL / NIVEL">
+                    <template #body="{ data }">
+                        <Tag :value="data.roles[0]?.name || 'SIN ROL'" 
+                             class="!bg-indigo-500/10 !text-indigo-400 !border !border-indigo-500/20 !px-3 !py-1 !text-[10px]" rounded />
+                    </template>
+                </Column>
+
+                <Column header="PERMISOS EXTRA">
+                    <template #body="{ data }">
+                        <span class="text-xs text-slate-500 italic">
+                            {{ data.permissions?.length || 0 }} adicionales
+                        </span>
+                    </template>
+                </Column>
+
                 <Column header="ACCIONES" class="text-right w-32">
                     <template #body="{ data }">
                         <div class="flex justify-end gap-1">
-                            <Button icon="pi pi-pencil" text rounded severity="secondary" @click="editUser(data)" 
-                                class="hover:!bg-white/5 transition-colors" />
-                            <Button icon="pi pi-trash" text rounded severity="danger" @click="deleteUser(data.id)"
-                                class="hover:!bg-red-500/5 transition-colors" />
+                            <Button v-if="can('editar usuarios')" icon="pi pi-pencil" text rounded severity="secondary" @click="editUser(data)" 
+                                    class="hover:!bg-white/5 transition-colors" />
+                            <Button v-if="can('eliminar usuarios')" icon="pi pi-trash" text rounded severity="danger" @click="deleteUser(data.id)"
+                                    class="hover:!bg-red-500/5 transition-colors" />
                         </div>
                     </template>
                 </Column>
@@ -132,44 +157,46 @@ const deleteUser = (id) => {
                 content: { class: 'bg-[#1a1d2b] text-white p-6' }
             }">
             
-            <form @submit.prevent="submit" class="grid grid-cols-1 gap-6 pt-2">
+            <form @submit.prevent="submit" class="grid grid-cols-1 gap-5 pt-2">
                 <div class="flex flex-col gap-2">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Nombre Completo</label>
-                    <div class="relative">
-                        <i class="pi pi-user absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                        <InputText v-model="form.name" placeholder="Ej. Juan Perez" 
-                            class="w-full !bg-[#0f111a] !border-white/10 !text-white focus:!border-indigo-500 !pl-11 !py-3 !rounded-xl" />
-                    </div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Nombre Completo</label>
+                    <InputText v-model="form.name" placeholder="Ej. Juan Perez" 
+                        class="w-full !bg-[#0f111a] !border-white/10 !text-white focus:!border-indigo-500 !py-3 !rounded-xl" />
                     <small v-if="form.errors.name" class="text-red-400 text-[10px]">{{ form.errors.name }}</small>
                 </div>
 
                 <div class="flex flex-col gap-2">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Correo Institucional</label>
-                    <div class="relative">
-                        <i class="pi pi-envelope absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                        <InputText v-model="form.email" type="email" placeholder="usuario@empresa.com"
-                            class="w-full !bg-[#0f111a] !border-white/10 !text-white focus:!border-indigo-500 !pl-11 !py-3 !rounded-xl" />
-                    </div>
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Email Corporativo</label>
+                    <InputText v-model="form.email" type="email" placeholder="usuario@empresa.com"
+                        class="w-full !bg-[#0f111a] !border-white/10 !text-white focus:!border-indigo-500 !py-3 !rounded-xl" />
                     <small v-if="form.errors.email" class="text-red-400 text-[10px]">{{ form.errors.email }}</small>
                 </div>
 
                 <div class="flex flex-col gap-2">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">
-                        {{ editMode ? 'Nueva Contraseña (Opcional)' : 'Contraseña de Acceso' }}
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Rol Principal</label>
+                    <Dropdown v-model="form.role" :options="roles" optionLabel="name" optionValue="name"
+                        placeholder="Seleccione un Rol" 
+                        class="w-full !bg-[#0f111a] !border-white/10 !text-white focus:!border-indigo-500 !rounded-xl custom-dropdown" />
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Permisos Individuales</label>
+                    <MultiSelect v-model="form.user_permissions" :options="permissions" optionLabel="name" optionValue="name"
+                        placeholder="Asignar extras" :maxSelectedLabels="2" display="chip"
+                        class="w-full !bg-[#0f111a] !border-white/10 !text-white focus:!border-indigo-500 !rounded-xl" />
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                        {{ editMode ? 'Nueva Contraseña (Opcional)' : 'Contraseña' }}
                     </label>
-                    <div class="relative">
-                        <i class="pi pi-lock absolute left-4 top-1/2 -translate-y-1/2 text-slate-500"></i>
-                        <InputText v-model="form.password" type="password" 
-                            placeholder="••••••••"
-                            class="w-full !bg-[#0f111a] !border-white/10 !text-white focus:!border-indigo-500 !pl-11 !py-3 !rounded-xl" />
-                    </div>
-                    <small v-if="form.errors.password" class="text-red-400 text-[10px]">{{ form.errors.password }}</small>
-                    <p v-if="editMode" class="text-[10px] text-slate-500 italic px-1">Dejar vacío para conservar la contraseña actual.</p>
+                    <InputText v-model="form.password" type="password" placeholder="••••••••"
+                        class="w-full !bg-[#0f111a] !border-white/10 !text-white focus:!border-indigo-500 !py-3 !rounded-xl" />
                 </div>
 
                 <div class="flex justify-end gap-3 mt-4">
                     <Button label="Cancelar" text severity="secondary" @click="displayModal = false" class="!text-slate-400" />
-                    <Button :label="editMode ? 'Actualizar Datos' : 'Crear Cuenta'" type="submit" 
+                    <Button :label="editMode ? 'Actualizar' : 'Crear Cuenta'" type="submit" 
                         icon="pi pi-check" :loading="form.processing" 
                         class="!bg-indigo-600 !border-none !rounded-xl !px-6 shadow-lg shadow-indigo-500/20" />
                 </div>

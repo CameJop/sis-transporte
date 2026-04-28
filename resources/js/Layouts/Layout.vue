@@ -121,7 +121,7 @@ const menuGroups = ref([
                     </div>
                     <div class="flex items-center gap-3">
                         <Button icon="pi pi-bell" text rounded severity="secondary" />
-                        <Link :href="route('dashboard')">
+                        <Link :href="route('profile.edit')">
                             <Avatar image="https://i.pravatar.cc/100" shape="circle" class="border-2 border-indigo-500/20 hover:border-indigo-500 transition-colors" />
                         </Link>
                     </div>

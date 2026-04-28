@@ -29,11 +29,22 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        return [
-            ...parent::share($request),
+        return array_merge(parent::share($request), [
             'auth' => [
-                'user' => $request->user(),
+                'user' => $request->user() ? [
+                    'id'    => $request->user()->id,
+                    'name'  => $request->user()->name,
+                    'email' => $request->user()->email,
+                    // Enviamos todos los permisos (del rol + directos) al frontend
+                    'permissions' => $request->user()->getAllPermissions()->pluck('name'),
+                    // Opcional: Enviamos también los roles por si los necesitas
+                    'roles' => $request->user()->getRoleNames(),
+                ] : null,
             ],
-        ];
+            // Puedes añadir mensajes flash aquí si los usas
+            'flash' => [
+                'message' => fn () => $request->session()->get('message'),
+            ],
+        ]);
     }
 }
