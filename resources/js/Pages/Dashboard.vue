@@ -1,736 +1,477 @@
 <script setup>
-import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref, onMounted } from 'vue';
+import { ref, computed } from 'vue';
 
-const showProfileMenu = ref(false);
-const activeSection = ref('mision');
-const visible = ref(false);
-
-onMounted(() => {
-    setTimeout(() => { visible.value = true; }, 100);
+const props = defineProps({
+    cliente: Object,
+    boletos: Array,
+    encomiendas: Array,
+    facturas: Array,
 });
 
-const logout = () => {
-    router.post(route('logout'));
+const activeTab = ref('boletos');
+
+const tabs = [
+    { key: 'boletos',     label: 'Mis Boletos',     icon: '🎟️' },
+    { key: 'encomiendas', label: 'Encomiendas',      icon: '📦' },
+    { key: 'facturas',    label: 'Facturas',         icon: '🧾' },
+];
+
+const estadoBadge = (estado) => {
+    const map = {
+        PROGRAMADO:  { text: 'Programado',  color: '#1D9E75', bg: '#E1F5EE' },
+        EN_CURSO:    { text: 'En curso',    color: '#185FA5', bg: '#E6F1FB' },
+        FINALIZADO:  { text: 'Finalizado',  color: '#5F5E5A', bg: '#F1EFE8' },
+        PENDIENTE:   { text: 'Pendiente',   color: '#BA7517', bg: '#FAEEDA' },
+        ENTREGADO:   { text: 'Entregado',   color: '#1D9E75', bg: '#E1F5EE' },
+        EN_TRANSITO: { text: 'En tránsito', color: '#185FA5', bg: '#E6F1FB' },
+    };
+    return map[estado?.toUpperCase()] ?? { text: estado ?? '—', color: '#888780', bg: '#F1EFE8' };
 };
 
-const values = [
-    {
-        icon: '🛡️',
-        title: 'Seguridad',
-        desc: 'La seguridad y bienestar de nuestros clientes es nuestra prioridad. Realizamos mantenimiento mecánico constante con personal profesional, capacitado y de confianza.',
-    },
-    {
-        icon: '⚡',
-        title: 'Eficiencia',
-        desc: 'Maximizamos nuestros recursos cada día para brindar el mejor servicio de transporte de pasajeros y el más rápido servicio de carga y encomiendas a nivel nacional.',
-    },
-    {
-        icon: '🤝',
-        title: 'Respeto',
-        desc: 'Entre todos los que conformamos la familia Trans. Copacabana S.A. y fundamentalmente hacia nuestros clientes.',
-    },
-    {
-        icon: '❤️',
-        title: 'Solidaridad',
-        desc: 'Somos una empresa comprometida al servicio social mediante el apoyo silencioso y solidario a las causas necesitadas.',
-    },
-    {
-        icon: '✨',
-        title: 'Honestidad',
-        desc: 'Un valor fundamental inculcado a los trabajadores y transmitido a nuestros clientes, proveedores y la comunidad en general.',
-    },
-];
-
-const stats = [
-    { number: '60+', label: 'Años de experiencia' },
-    { number: '100%', label: 'Empresa boliviana' },
-    { number: '9', label: 'Departamentos' },
-    { number: '∞', label: 'Confianza' },
-];
+const logout = () => router.post(route('logout'));
 </script>
 
 <template>
-    <AuthenticatedLayout>
-        <Head title="Dashboard — Trans. Copacabana S.A." />
+    <Head title="Mi Cuenta — Trans. Copacabana" />
 
-        <div class="dashboard-root">
+    <div class="root">
 
-            <!-- ══ TOP NAVBAR ══ -->
-            <nav class="topbar">
-                <div class="topbar-left">
-                    <img src="/images/logo.png" alt="Trans. Copacabana S.A." class="topbar-logo" />
+        <!-- TOPBAR -->
+        <nav class="topbar">
+            <Link :href="route('home')">
+                <img src="/images/logo.png" alt="Trans. Copacabana S.A." class="logo" />
+            </Link>
+            <div class="topbar-right">
+                <span class="user-name">{{ cliente.nombre }}</span>
+                <button @click="logout" class="btn-logout">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                    Cerrar Sesión
+                </button>
+            </div>
+        </nav>
+
+        <main class="main">
+
+            <!-- PERFIL -->
+            <section class="profile-card">
+                <div class="avatar">{{ cliente.nombre.charAt(0).toUpperCase() }}</div>
+                <div class="profile-info">
+                    <h1 class="profile-name">{{ cliente.nombre }}</h1>
+                    <p class="profile-meta">CI: {{ cliente.documento_identidad ?? '—' }}</p>
                 </div>
-                <div class="topbar-right">
-                    <!-- Profile dropdown -->
-                    <div class="profile-wrapper" @click.stop="showProfileMenu = !showProfileMenu">
-                        <div class="avatar">
-                            {{ $page.props.auth.user.name.charAt(0).toUpperCase() }}
-                        </div>
-                        <div class="profile-info">
-                            <span class="profile-name">{{ $page.props.auth.user.name }}</span>
-                            <span class="profile-role">Miembro</span>
-                        </div>
-                        <svg class="chevron" :class="{ rotated: showProfileMenu }" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
-
-                        <!-- Dropdown -->
-                        <transition name="drop">
-                            <div v-if="showProfileMenu" class="dropdown" @click.stop>
-                                <Link :href="route('profile.edit')" class="dropdown-item">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                                    Mi Perfil
-                                </Link>
-                                <div class="dropdown-divider"></div>
-                                <button @click="logout" class="dropdown-item dropdown-logout">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                                    Cerrar Sesión
-                                </button>
-                            </div>
-                        </transition>
+                <div class="profile-data">
+                    <div class="profile-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.11 13.5 19.79 19.79 0 0 1 1 4.84 2 2 0 0 1 2.96 2.68h3a2 2 0 0 1 2 1.72c.12.96.36 1.9.72 2.81a2 2 0 0 1-.45 2.11L7.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.91.36 1.85.6 2.81.72A2 2 0 0 1 21 16.92z"></path></svg>
+                        {{ cliente.telefono ?? '—' }}
                     </div>
-                </div>
-            </nav>
-
-            <!-- Backdrop to close menu -->
-            <div v-if="showProfileMenu" class="backdrop" @click="showProfileMenu = false"></div>
-
-            <!-- ══ HERO BANNER ══ -->
-            <section class="hero" :class="{ 'hero-visible': visible }">
-                <div class="hero-overlay"></div>
-                <div class="hero-content">
-                    <p class="hero-eyebrow">Bienvenido al Portal</p>
-                    <h1 class="hero-title">Trans. Copacabana <span class="hero-accent">S.A.</span></h1>
-                    <p class="hero-tagline">Más de 60 años haciendo Bolivia</p>
-                    <div class="hero-divider"></div>
-                    <p class="hero-sub">Empresa 100% boliviana uniendo el país a través de sus rutas</p>
-                </div>
-
-                <!-- Stats bar -->
-                <div class="stats-bar">
-                    <div v-for="s in stats" :key="s.label" class="stat-item">
-                        <span class="stat-number">{{ s.number }}</span>
-                        <span class="stat-label">{{ s.label }}</span>
+                    <div class="profile-item">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        {{ cliente.email ?? '—' }}
                     </div>
                 </div>
             </section>
 
-            <!-- ══ MAIN CONTENT ══ -->
-            <main class="main">
-
-                <!-- Section: Quiénes Somos header -->
-                <div class="section-header" :class="{ 'fade-up': visible }">
-                    <span class="section-tag">Nuestra Empresa</span>
-                    <h2 class="section-title">Quiénes Somos</h2>
-                    <div class="section-rule"></div>
+            <!-- STATS -->
+            <div class="stats-row">
+                <div class="stat-card">
+                    <span class="stat-num">{{ boletos.length }}</span>
+                    <span class="stat-label">Boletos</span>
                 </div>
-
-                <!-- Mission / Vision tabs -->
-                <div class="mv-tabs" :class="{ 'fade-up': visible }" style="animation-delay: 0.1s">
-                    <button
-                        class="mv-tab"
-                        :class="{ active: activeSection === 'mision' }"
-                        @click="activeSection = 'mision'"
-                    >Misión</button>
-                    <button
-                        class="mv-tab"
-                        :class="{ active: activeSection === 'vision' }"
-                        @click="activeSection = 'vision'"
-                    >Visión</button>
+                <div class="stat-card">
+                    <span class="stat-num">{{ encomiendas.length }}</span>
+                    <span class="stat-label">Encomiendas</span>
                 </div>
+                <div class="stat-card">
+                    <span class="stat-num">{{ facturas.length }}</span>
+                    <span class="stat-label">Facturas</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-num">
+                        Bs {{ boletos.reduce((a, b) => a + parseFloat(b.precio || 0), 0).toFixed(2) }}
+                    </span>
+                    <span class="stat-label">Total gastado</span>
+                </div>
+            </div>
 
-                <transition name="slide-fade" mode="out-in">
-                    <!-- MISIÓN -->
-                    <div v-if="activeSection === 'mision'" key="mision" class="mv-card">
-                        <div class="mv-icon">🚌</div>
-                        <div class="mv-body">
-                            <h3 class="mv-heading">Nuestra Misión</h3>
-                            <p class="mv-text">
-                                Trans. Copacabana S.A. busca la excelencia en servicios de transporte de carga y pasajeros
-                                mediante el desarrollo de relaciones mutuamente gratificantes con nuestro equipo, clientes,
-                                aliados y proveedores. La empresa está comprometida en brindar un servicio eficiente y de
-                                valor añadido en el transporte de pasajeros, carga y encomiendas, ofreciendo calidad en el
-                                servicio, garantizando la satisfacción y bienestar del cliente uniendo a Bolivia a través
-                                de sus rutas de todo el territorio nacional.
-                            </p>
-                            <p class="mv-text mv-highlight">
-                                Trans. Copacabana S.A. es una empresa <strong>100% boliviana</strong>, confiamos en nuestra
-                                gente y buscamos ser el aliado logístico de los bolivianos en el transporte terrestre de
-                                carga y pasajeros.
-                            </p>
+            <!-- TABS -->
+            <div class="tabs">
+                <button
+                    v-for="tab in tabs"
+                    :key="tab.key"
+                    class="tab-btn"
+                    :class="{ active: activeTab === tab.key }"
+                    @click="activeTab = tab.key"
+                >
+                    {{ tab.icon }} {{ tab.label }}
+                </button>
+            </div>
+
+            <!-- ── BOLETOS ── -->
+            <div v-if="activeTab === 'boletos'">
+                <div v-if="boletos.length === 0" class="empty">No tienes boletos registrados.</div>
+                <div v-else class="cards-grid">
+                    <div v-for="b in boletos" :key="b.id_boleto" class="ticket-card">
+                        <div class="ticket-header">
+                            <div>
+                                <p class="ticket-route">
+                                    {{ b.viaje?.ruta?.origen ?? '—' }}
+                                    <span class="arrow">→</span>
+                                    {{ b.viaje?.ruta?.destino ?? '—' }}
+                                </p>
+                                <p class="ticket-date">
+                                    {{ b.viaje?.fecha_salida ?? '—' }} · {{ b.viaje?.hora_salida ?? '—' }}
+                                </p>
+                            </div>
+                            <span class="badge" :style="{ color: estadoBadge(b.viaje?.estado).color, background: estadoBadge(b.viaje?.estado).bg }">
+                                {{ estadoBadge(b.viaje?.estado).text }}
+                            </span>
+                        </div>
+                        <div class="ticket-footer">
+                            <div class="ticket-detail">
+                                <span class="detail-label">Asiento</span>
+                                <span class="detail-val">{{ b.asiento }}</span>
+                            </div>
+                            <div class="ticket-detail">
+                                <span class="detail-label">Precio</span>
+                                <span class="detail-val price">Bs {{ parseFloat(b.precio).toFixed(2) }}</span>
+                            </div>
+                            <div class="ticket-detail">
+                                <span class="detail-label">Comprado</span>
+                                <span class="detail-val">{{ b.fecha_compra ? new Date(b.fecha_compra).toLocaleDateString('es-BO') : '—' }}</span>
+                            </div>
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <!-- VISIÓN -->
-                    <div v-else key="vision" class="mv-card">
-                        <div class="mv-icon">🌐</div>
-                        <div class="mv-body">
-                            <h3 class="mv-heading">Nuestra Visión</h3>
-                            <p class="mv-text">
-                                Consolidarnos como <strong>pioneros del transporte terrestre en Bolivia</strong>,
-                                continuamente expandiendo nuestras rutas, implementando nuevas tecnologías y mejorando
-                                nuestros servicios para seguir integrando el país.
-                            </p>
+            <!-- ── ENCOMIENDAS ── -->
+            <div v-if="activeTab === 'encomiendas'">
+                <div v-if="encomiendas.length === 0" class="empty">No tienes encomiendas registradas.</div>
+                <div v-else class="cards-grid">
+                    <div v-for="e in encomiendas" :key="e.id_encomienda" class="ticket-card">
+                        <div class="ticket-header">
+                            <div>
+                                <p class="ticket-route">
+                                    {{ e.viaje?.ruta?.origen ?? '—' }}
+                                    <span class="arrow">→</span>
+                                    {{ e.viaje?.ruta?.destino ?? '—' }}
+                                </p>
+                                <p class="ticket-date">Envío: {{ e.fecha_envio ?? '—' }}</p>
+                            </div>
+                            <span class="badge" :style="{ color: estadoBadge(e.estado).color, background: estadoBadge(e.estado).bg }">
+                                {{ estadoBadge(e.estado).text }}
+                            </span>
+                        </div>
+                        <div class="ticket-footer">
+                            <div class="ticket-detail">
+                                <span class="detail-label">Remitente</span>
+                                <span class="detail-val">{{ e.remitente?.nombre ?? '—' }}</span>
+                            </div>
+                            <div class="ticket-detail">
+                                <span class="detail-label">Destinatario</span>
+                                <span class="detail-val">{{ e.destinatario?.nombre ?? '—' }}</span>
+                            </div>
+                            <div class="ticket-detail">
+                                <span class="detail-label">Peso</span>
+                                <span class="detail-val">{{ e.peso ? e.peso + ' kg' : '—' }}</span>
+                            </div>
                         </div>
                     </div>
-                </transition>
-
-                <!-- Section: Valores -->
-                <div class="section-header mt-section" :class="{ 'fade-up': visible }" style="animation-delay:0.2s">
-                    <span class="section-tag">Nuestra Empresa</span>
-                    <h2 class="section-title">Nuestros Valores</h2>
-                    <div class="section-rule"></div>
                 </div>
+            </div>
 
-                <div class="values-grid">
-                    <div
-                        v-for="(v, i) in values"
-                        :key="v.title"
-                        class="value-card"
-                        :class="{ 'fade-up': visible }"
-                        :style="{ animationDelay: (0.15 * i + 0.3) + 's' }"
-                    >
-                        <div class="value-icon">{{ v.icon }}</div>
-                        <h4 class="value-title">{{ v.title }}</h4>
-                        <p class="value-desc">{{ v.desc }}</p>
-                        <div class="value-accent"></div>
+            <!-- ── FACTURAS ── -->
+            <div v-if="activeTab === 'facturas'">
+                <div v-if="facturas.length === 0" class="empty">No tienes facturas registradas.</div>
+                <div v-else class="cards-grid">
+                    <div v-for="f in facturas" :key="f.id_factura" class="ticket-card">
+                        <div class="ticket-header">
+                            <div>
+                                <p class="ticket-route">Factura #{{ f.id_factura }}</p>
+                                <p class="ticket-date">{{ f.fecha ? new Date(f.fecha).toLocaleDateString('es-BO') : '—' }}</p>
+                            </div>
+                            <span class="badge" style="color:#1D9E75; background:#E1F5EE;">Emitida</span>
+                        </div>
+                        <div class="ticket-footer">
+                            <div class="ticket-detail">
+                                <span class="detail-label">Método de pago</span>
+                                <span class="detail-val">{{ f.metodo_pago?.nombre ?? '—' }}</span>
+                            </div>
+                            <div class="ticket-detail">
+                                <span class="detail-label">Atendido por</span>
+                                <span class="detail-val">{{ f.empleado?.nombre ?? '—' }}</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
+            </div>
 
-            </main>
+        </main>
 
-            <!-- ══ FOOTER ══ -->
-            <footer class="site-footer">
-                <p>© {{ new Date().getFullYear() }} Trans. Copacabana S.A. — Todos los derechos reservados.</p>
-                <p class="footer-sub">Empresa 100% boliviana · Más de 60 años de servicio</p>
-            </footer>
-
-        </div>
-    </AuthenticatedLayout>
+        <footer class="site-footer">
+            © {{ new Date().getFullYear() }} Trans. Copacabana S.A. · Empresa 100% boliviana
+        </footer>
+    </div>
 </template>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Nunito:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Nunito:wght@400;500;600;700&display=swap');
 
-/* ══ RESET & ROOT ══ */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-.dashboard-root {
+.root {
     min-height: 100vh;
     background: #0d1117;
     font-family: 'Nunito', sans-serif;
     color: #e2e8f0;
-    overflow-x: hidden;
 }
 
-/* ══ TOPBAR ══ */
+/* TOPBAR */
 .topbar {
-    position: fixed;
-    top: 0; left: 0; right: 0;
-    z-index: 100;
+    position: sticky;
+    top: 0;
+    z-index: 50;
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 12px 40px;
-    background: rgba(10, 12, 20, 0.85);
+    background: rgba(10,12,20,0.9);
     backdrop-filter: blur(14px);
     border-bottom: 1px solid rgba(255,255,255,0.07);
 }
 
-.topbar-logo {
-    height: 44px;
-    width: auto;
-    object-fit: contain;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
-}
+.logo { height: 42px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
 
-.topbar-right {
+.topbar-right { display: flex; align-items: center; gap: 16px; }
+
+.user-name { font-size: 0.85rem; font-weight: 600; color: rgba(255,255,255,0.6); }
+
+.btn-logout {
     display: flex;
     align-items: center;
-    gap: 16px;
-}
-
-/* Profile */
-.profile-wrapper {
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    padding: 6px 14px 6px 6px;
+    gap: 7px;
+    padding: 7px 16px;
     border-radius: 50px;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.1);
-    transition: background 0.2s, border-color 0.2s;
-    user-select: none;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: transparent;
+    color: rgba(255,255,255,0.55);
+    font-family: 'Nunito', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
-.profile-wrapper:hover {
-    background: rgba(255,255,255,0.1);
-    border-color: rgba(192,57,43,0.5);
+.btn-logout:hover { background: rgba(192,57,43,0.15); border-color: rgba(192,57,43,0.4); color: #f87171; }
+
+/* MAIN */
+.main { max-width: 1000px; margin: 0 auto; padding: 48px 24px 80px; }
+
+/* PERFIL */
+.profile-card {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 32px 36px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
 }
 
 .avatar {
-    width: 34px;
-    height: 34px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
     background: linear-gradient(135deg, #c0392b, #96281b);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 700;
-    font-size: 0.9rem;
-    color: #fff;
-    flex-shrink: 0;
-}
-
-.profile-info {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.2;
-}
-
-.profile-name {
-    font-size: 0.85rem;
-    font-weight: 700;
-    color: #fff;
-}
-
-.profile-role {
-    font-size: 0.7rem;
-    color: rgba(255,255,255,0.45);
-}
-
-.chevron {
-    color: rgba(255,255,255,0.5);
-    transition: transform 0.25s;
-    flex-shrink: 0;
-}
-
-.chevron.rotated { transform: rotate(180deg); }
-
-/* Dropdown */
-.dropdown {
-    position: absolute;
-    top: calc(100% + 10px);
-    right: 0;
-    background: #1a1f2e;
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
-    min-width: 180px;
-    padding: 6px;
-    box-shadow: 0 16px 40px rgba(0,0,0,0.5);
-    z-index: 200;
-}
-
-.dropdown-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: rgba(255,255,255,0.75);
-    text-decoration: none;
-    cursor: pointer;
-    background: none;
-    border: none;
-    width: 100%;
-    text-align: left;
-    font-family: 'Nunito', sans-serif;
-    transition: background 0.15s, color 0.15s;
-}
-
-.dropdown-item:hover {
-    background: rgba(255,255,255,0.07);
-    color: #fff;
-}
-
-.dropdown-logout {
-    color: #fca5a5;
-}
-
-.dropdown-logout:hover {
-    background: rgba(192,57,43,0.15);
-    color: #f87171;
-}
-
-.dropdown-divider {
-    height: 1px;
-    background: rgba(255,255,255,0.07);
-    margin: 4px 0;
-}
-
-.backdrop {
-    position: fixed;
-    inset: 0;
-    z-index: 99;
-}
-
-/* Dropdown animation */
-.drop-enter-active { animation: dropIn 0.2s ease; }
-.drop-leave-active { animation: dropIn 0.15s ease reverse; }
-@keyframes dropIn {
-    from { opacity: 0; transform: translateY(-8px) scale(0.97); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-
-/* ══ HERO ══ */
-.hero {
-    position: relative;
-    height: 520px;
-    margin-top: 68px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    background-image: url('https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=1600&q=80');
-    background-size: cover;
-    background-position: center;
-    overflow: hidden;
-    opacity: 0;
-    transition: opacity 0.8s ease;
-}
-
-.hero-visible { opacity: 1; }
-
-.hero-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-        160deg,
-        rgba(8, 12, 30, 0.88) 0%,
-        rgba(15, 25, 55, 0.75) 50%,
-        rgba(70, 30, 10, 0.6) 100%
-    );
-}
-
-.hero-content {
-    position: relative;
-    z-index: 2;
-    text-align: center;
-    padding: 0 20px;
-}
-
-.hero-eyebrow {
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: rgba(192,57,43,0.9);
-    margin-bottom: 12px;
-}
-
-.hero-title {
-    font-family: 'Playfair Display', serif;
-    font-size: clamp(2.2rem, 5vw, 4rem);
-    font-weight: 900;
-    color: #fff;
-    line-height: 1.1;
-    text-shadow: 0 4px 20px rgba(0,0,0,0.6);
-}
-
-.hero-accent { color: #e05c4b; }
-
-.hero-tagline {
-    font-size: 1rem;
-    color: rgba(255,255,255,0.75);
-    margin-top: 10px;
-    font-weight: 500;
-    letter-spacing: 0.5px;
-}
-
-.hero-divider {
-    width: 60px;
-    height: 2px;
-    background: linear-gradient(90deg, #c0392b, transparent);
-    margin: 18px auto;
-}
-
-.hero-sub {
-    font-size: 0.88rem;
-    color: rgba(255,255,255,0.5);
-    max-width: 420px;
-    margin: 0 auto;
-    line-height: 1.6;
-}
-
-/* Stats bar */
-.stats-bar {
-    position: absolute;
-    bottom: 0;
-    left: 0; right: 0;
-    z-index: 2;
-    display: flex;
-    justify-content: center;
-    gap: 0;
-    background: rgba(5, 8, 18, 0.75);
-    backdrop-filter: blur(10px);
-    border-top: 1px solid rgba(255,255,255,0.08);
-}
-
-.stat-item {
-    flex: 1;
-    max-width: 200px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 16px 8px;
-    border-right: 1px solid rgba(255,255,255,0.06);
-}
-
-.stat-item:last-child { border-right: none; }
-
-.stat-number {
     font-family: 'Playfair Display', serif;
     font-size: 1.8rem;
     font-weight: 700;
-    color: #e05c4b;
-    line-height: 1;
+    color: #fff;
+    flex-shrink: 0;
 }
 
-.stat-label {
-    font-size: 0.7rem;
-    color: rgba(255,255,255,0.45);
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    margin-top: 4px;
-    text-transform: uppercase;
+.profile-info { flex: 1; min-width: 160px; }
+
+.profile-name {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
 }
 
-/* ══ MAIN ══ */
-.main {
-    max-width: 1100px;
-    margin: 0 auto;
-    padding: 64px 24px 80px;
+.profile-meta { font-size: 0.82rem; color: rgba(255,255,255,0.4); }
+
+.profile-data {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 200px;
 }
 
-/* Section header */
-.section-header {
-    text-align: center;
+.profile-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.55);
+}
+
+/* STATS */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
     margin-bottom: 36px;
 }
 
-.mt-section { margin-top: 80px; }
-
-.section-tag {
-    display: inline-block;
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 3px;
-    text-transform: uppercase;
-    color: #c0392b;
-    margin-bottom: 10px;
+.stat-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 24px 20px;
+    text-align: center;
+    transition: border-color 0.2s;
 }
 
-.section-title {
+.stat-card:hover { border-color: rgba(192,57,43,0.35); }
+
+.stat-num {
+    display: block;
     font-family: 'Playfair Display', serif;
-    font-size: clamp(1.7rem, 3vw, 2.5rem);
+    font-size: 1.6rem;
     font-weight: 700;
-    color: #fff;
-    margin-bottom: 14px;
+    color: #e05c4b;
+    line-height: 1;
+    margin-bottom: 6px;
 }
 
-.section-rule {
-    width: 48px;
-    height: 3px;
-    background: linear-gradient(90deg, #c0392b, transparent);
-    margin: 0 auto;
-    border-radius: 2px;
-}
+.stat-label { font-size: 0.75rem; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
 
-/* ══ MISSION / VISION TABS ══ */
-.mv-tabs {
+/* TABS */
+.tabs {
     display: flex;
-    justify-content: center;
     gap: 8px;
-    margin-bottom: 24px;
+    margin-bottom: 28px;
+    flex-wrap: wrap;
 }
 
-.mv-tab {
-    padding: 9px 30px;
+.tab-btn {
+    padding: 9px 22px;
     border-radius: 50px;
-    border: 1px solid rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.12);
     background: transparent;
     color: rgba(255,255,255,0.5);
     font-family: 'Nunito', sans-serif;
     font-weight: 700;
-    font-size: 0.88rem;
+    font-size: 0.85rem;
     cursor: pointer;
-    transition: all 0.25s ease;
-    letter-spacing: 0.3px;
+    transition: all 0.22s;
 }
 
-.mv-tab.active {
+.tab-btn.active {
     background: linear-gradient(135deg, #c0392b, #96281b);
     border-color: transparent;
     color: #fff;
-    box-shadow: 0 4px 16px rgba(192,57,43,0.4);
+    box-shadow: 0 4px 14px rgba(192,57,43,0.35);
 }
 
-.mv-tab:not(.active):hover {
-    border-color: rgba(192,57,43,0.5);
-    color: rgba(255,255,255,0.8);
-}
+.tab-btn:not(.active):hover { border-color: rgba(192,57,43,0.4); color: rgba(255,255,255,0.8); }
 
-/* ══ MV CARD ══ */
-.mv-card {
-    display: flex;
-    gap: 32px;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 20px;
-    padding: 40px 44px;
-    align-items: flex-start;
-    transition: all 0.3s ease;
-}
-
-.mv-card:hover {
-    background: rgba(255,255,255,0.06);
-    border-color: rgba(192,57,43,0.3);
-}
-
-.mv-icon {
-    font-size: 2.8rem;
-    flex-shrink: 0;
-    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
-    margin-top: 4px;
-}
-
-.mv-body { flex: 1; }
-
-.mv-heading {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #fff;
-    margin-bottom: 16px;
-}
-
-.mv-text {
-    font-size: 0.95rem;
-    color: rgba(255,255,255,0.7);
-    line-height: 1.8;
-    margin-bottom: 14px;
-}
-
-.mv-text:last-child { margin-bottom: 0; }
-
-.mv-highlight {
-    border-left: 3px solid #c0392b;
-    padding-left: 16px;
-    color: rgba(255,255,255,0.8);
-}
-
-/* ══ VALUES GRID ══ */
-.values-grid {
+/* CARDS */
+.cards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
 }
 
-.value-card {
-    position: relative;
+.ticket-card {
     background: rgba(255,255,255,0.04);
     border: 1px solid rgba(255,255,255,0.08);
     border-radius: 16px;
-    padding: 32px 24px 28px;
-    text-align: center;
-    overflow: hidden;
-    transition: transform 0.3s ease, border-color 0.3s ease, background 0.3s ease;
+    padding: 22px 24px;
+    transition: transform 0.25s, border-color 0.25s, background 0.25s;
 }
 
-.value-card:hover {
-    transform: translateY(-5px);
+.ticket-card:hover {
+    transform: translateY(-3px);
     background: rgba(255,255,255,0.07);
-    border-color: rgba(192,57,43,0.4);
+    border-color: rgba(192,57,43,0.35);
 }
 
-.value-card:hover .value-accent {
-    opacity: 1;
-    transform: scaleX(1);
+.ticket-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 18px;
 }
 
-.value-icon {
-    font-size: 2.2rem;
-    margin-bottom: 14px;
-    display: block;
-    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
-}
-
-.value-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 1.1rem;
+.ticket-route {
+    font-size: 0.95rem;
     font-weight: 700;
     color: #fff;
-    margin-bottom: 10px;
+    margin-bottom: 4px;
 }
 
-.value-desc {
-    font-size: 0.82rem;
-    color: rgba(255,255,255,0.55);
-    line-height: 1.7;
+.arrow { color: #e05c4b; margin: 0 4px; }
+
+.ticket-date { font-size: 0.78rem; color: rgba(255,255,255,0.4); }
+
+.badge {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 50px;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
-.value-accent {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #c0392b, #e74c3c);
-    opacity: 0;
-    transform: scaleX(0.3);
-    transition: opacity 0.3s ease, transform 0.3s ease;
-    transform-origin: left;
+.ticket-footer {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    padding-top: 16px;
 }
 
-/* ══ ANIMATIONS ══ */
-.fade-up {
-    animation: fadeUp 0.65s ease both;
+.ticket-detail { display: flex; justify-content: space-between; align-items: center; }
+
+.detail-label { font-size: 0.78rem; color: rgba(255,255,255,0.4); }
+
+.detail-val { font-size: 0.85rem; font-weight: 600; color: rgba(255,255,255,0.8); }
+
+.detail-val.price { color: #e05c4b; }
+
+/* EMPTY */
+.empty {
+    text-align: center;
+    padding: 60px 20px;
+    color: rgba(255,255,255,0.3);
+    font-size: 0.9rem;
 }
 
-@keyframes fadeUp {
-    from { opacity: 0; transform: translateY(28px); }
-    to   { opacity: 1; transform: translateY(0); }
-}
-
-.slide-fade-enter-active {
-    animation: slideFadeIn 0.3s ease;
-}
-.slide-fade-leave-active {
-    animation: slideFadeIn 0.2s ease reverse;
-}
-
-@keyframes slideFadeIn {
-    from { opacity: 0; transform: translateX(12px); }
-    to   { opacity: 1; transform: translateX(0); }
-}
-
-/* ══ FOOTER ══ */
+/* FOOTER */
 .site-footer {
     text-align: center;
-    padding: 32px 20px;
+    padding: 28px 20px;
     background: rgba(0,0,0,0.3);
     border-top: 1px solid rgba(255,255,255,0.06);
-    font-size: 0.8rem;
-    color: rgba(255,255,255,0.25);
-    line-height: 1.7;
+    font-size: 0.78rem;
+    color: rgba(255,255,255,0.2);
 }
 
-.footer-sub {
-    font-size: 0.72rem;
-    color: rgba(255,255,255,0.15);
-}
-
-/* ══ RESPONSIVE ══ */
 @media (max-width: 640px) {
     .topbar { padding: 12px 20px; }
-    .profile-info { display: none; }
-    .hero { height: 420px; }
-    .stats-bar { flex-wrap: wrap; }
-    .stat-item { min-width: 50%; border-bottom: 1px solid rgba(255,255,255,0.06); }
-    .mv-card { flex-direction: column; padding: 28px 24px; gap: 16px; }
-    .values-grid { grid-template-columns: 1fr 1fr; }
-    .main { padding: 40px 16px 60px; }
+    .user-name { display: none; }
+    .profile-card { flex-direction: column; padding: 24px 20px; }
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .main { padding: 32px 16px 60px; }
 }
 </style>
