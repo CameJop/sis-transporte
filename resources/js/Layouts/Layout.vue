@@ -38,6 +38,7 @@ const menuGroups = computed(() => [
     {
         label: 'Finanzas y Control',
         items: [
+            { label: 'Registrar Venta', icon: 'pi pi-shopping-cart', route: 'ventas.index', active: route().current('ventas.*') },
             { label: 'Facturas', icon: 'pi pi-file-pdf', route: 'facturas.index', active: route().current('facturas.*') },
             { label: 'Detalles Factura', icon: 'pi pi-list', route: 'detalles-factura.index', active: route().current('detalles-factura.*') },
             { label: 'Métodos de Pago', icon: 'pi pi-credit-card', route: 'metodos-pago.index', active: route().current('metodos-pago.*') },

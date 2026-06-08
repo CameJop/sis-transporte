@@ -1,0 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Nunito:wght@400;500;600;700&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ══ BASE ══ */
+.section        { padding: 96px 24px; }
+.section-dark   { background: #0d1117; }
+.section-darker { background: #090c14; }
+.section-inner  { max-width: 1200px; margin: 0 auto; }
+
+/* ══ ENCABEZADOS DE SECCIÓN ══ */
+.section-header { text-align: center; margin-bottom: 56px; }
+.section-tag {
+    display: inline-block; font-size: 0.68rem; font-weight: 700;
+    letter-spacing: 3px; text-transform: uppercase;
+    color: #c0392b; margin-bottom: 12px;
+}
+.section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+    font-weight: 700; color: #fff; margin-bottom: 16px;
+}
+.section-rule {
+    width: 52px; height: 3px;
+    background: linear-gradient(90deg, #c0392b, transparent);
+    margin: 0 auto 20px; border-radius: 2px;
+}
+.section-desc {
+    font-size: 0.95rem; color: rgba(255,255,255,0.5);
+    max-width: 580px; margin: 0 auto; line-height: 1.7;
+}
+
+/* ══ BOTÓN PRINCIPAL ══ */
+.btn-primary-lg {
+    display: inline-block;
+    padding: 14px 40px; border-radius: 50px;
+    background: linear-gradient(135deg, #c0392b, #96281b);
+    color: #fff; font-weight: 700; font-size: 1rem;
+    text-decoration: none; border: none; cursor: pointer;
+    transition: filter 0.2s, transform 0.2s;
+    box-shadow: 0 6px 24px rgba(192,57,43,0.4);
+    font-family: 'Nunito', sans-serif;
+}
+.btn-primary-lg:hover { filter: brightness(1.1); transform: translateY(-2px); }
+
+/* ══ RESPONSIVE BASE ══ */
+@media (max-width: 768px) {
+    .section { padding: 64px 20px; }
+}

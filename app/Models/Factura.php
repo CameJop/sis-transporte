@@ -11,13 +11,14 @@ class Factura extends Model
 
     protected $table = 'factura';
     protected $primaryKey = 'id_factura';
-
+    public $timestamps = false;
     // Asegúrate de que estos campos estén en el fillable
     protected $fillable = [
         'id_cliente',
         'id_empleado',
         'id_metodo_pago',
-        'fecha'
+        'fecha',
+        'total'
     ];
 
     // ESTA ES LA RELACIÓN QUE FALTA O ESTÁ MAL ESCRITA

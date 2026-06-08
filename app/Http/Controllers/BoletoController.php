@@ -13,14 +13,25 @@ class BoletoController extends Controller
 {
     public function index()
     {
+        $boletos = Boleto::with([
+            'cliente',
+            'viaje.itinerario.ruta.origen',
+            'viaje.itinerario.ruta.destino',
+            'viaje.bus'
+        ])->get();
+
+        $viajes = Viaje::with([
+            'itinerario.ruta.origen',
+            'itinerario.ruta.destino',
+            'bus'
+        ])->where('estado', 'PROGRAMADO')->get();
+
+        $clientes = Cliente::all();
+
         return Inertia::render('Boletos/Index', [
-            'boletos' => Boleto::with(['viaje.ruta.origen', 'viaje.ruta.destino', 'cliente'])
-                ->orderBy('id_boleto', 'desc') // Ordenar de 10 a 1
-                ->get(),
-            'viajes' => Viaje::with(['ruta.origen', 'ruta.destino', 'bus'])
-                ->where('estado', '!=', 'FINALIZADO')
-                ->get(),
-            'clientes' => Cliente::all()
+            'boletos'  => $boletos,
+            'viajes'   => $viajes,
+            'clientes' => $clientes,
         ]);
     }
 
@@ -35,8 +46,8 @@ class BoletoController extends Controller
 
         // Validación manual de asiento único por viaje (además del constraint de DB)
         $existe = Boleto::where('id_viaje', $data['id_viaje'])
-                        ->where('asiento', $data['asiento'])
-                        ->exists();
+            ->where('asiento', $data['asiento'])
+            ->exists();
 
         if ($existe) {
             return back()->withErrors(['asiento' => 'El asiento ya está ocupado para este viaje.']);
@@ -50,7 +61,7 @@ class BoletoController extends Controller
     public function update(Request $request, $id)
     {
         $boleto = Boleto::findOrFail($id);
-        
+
         $data = $request->validate([
             'id_viaje'   => 'required|exists:VIAJE,id_viaje',
             'id_cliente' => 'required|exists:CLIENTE,id_cliente',

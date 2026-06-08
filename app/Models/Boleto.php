@@ -11,7 +11,7 @@ class Boleto extends Model
 
     protected $table = 'BOLETO';
     protected $primaryKey = 'id_boleto';
-    public $timestamps = false; // Usamos el default de la DB para fecha_compra
+    public $timestamps = false;
 
     protected $fillable = [
         'id_viaje',

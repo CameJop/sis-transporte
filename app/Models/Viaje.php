@@ -17,7 +17,7 @@ class Viaje extends Model
         'id_ruta',
         'id_bus',
         'fecha_salida',
-        'hora_salida',
+        'id_itinerario',
         'estado'
     ];
 
@@ -29,5 +29,10 @@ class Viaje extends Model
     public function bus()
     {
         return $this->belongsTo(Bus::class, 'id_bus');
+    }
+    public function itinerario()
+    {
+        // belongsTo porque la tabla VIAJE tiene la llave foránea 'id_itinerario'
+        return $this->belongsTo(Itinerario::class, 'id_itinerario');
     }
 }

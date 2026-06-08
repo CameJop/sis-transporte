@@ -9,7 +9,7 @@ class DetalleFactura extends Model
 {
     use HasFactory;
 
-    protected $table = 'DETALLE_FACTURA';
+    protected $table = 'detalle_factura';
     protected $primaryKey = 'id_detalle';
     public $timestamps = false;
 

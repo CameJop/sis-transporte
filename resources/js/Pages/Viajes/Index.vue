@@ -8,13 +8,12 @@ import DataTable from 'primevue/datatable';
 import Column from 'primevue/column';
 import Button from 'primevue/button';
 import Dialog from 'primevue/dialog';
-import InputText from 'primevue/inputtext';
 import Dropdown from 'primevue/dropdown';
 import Tag from 'primevue/tag';
 
 const props = defineProps({
     viajes: Array,
-    rutas: Array,
+    itinerarios: Array,
     buses: Array
 });
 
@@ -29,10 +28,9 @@ const estados = [
 
 const form = useForm({
     id_viaje: null,
-    id_ruta: null,
+    id_itinerario: null,
     id_bus: null,
     fecha_salida: '',
-    hora_salida: '',
     estado: 'PROGRAMADO',
 });
 
@@ -44,10 +42,9 @@ const openNew = () => {
 
 const editViaje = (data) => {
     form.id_viaje = data.id_viaje;
-    form.id_ruta = data.id_ruta;
+    form.id_itinerario = data.id_itinerario;
     form.id_bus = data.id_bus;
     form.fecha_salida = data.fecha_salida;
-    form.hora_salida = data.hora_salida;
     form.estado = data.estado;
     editMode.value = true;
     displayModal.value = true;
@@ -93,8 +90,8 @@ const deleteViaje = (id) => {
                         <i class="pi pi-calendar text-indigo-500"></i>
                         Programación de Viajes
                     </h1>
-                    <p class="text-slate-500 text-sm mt-1">Gestión de salidas, asignación de buses y monitoreo de
-                        estados.</p>
+                    <p class="text-slate-500 text-sm mt-1">Gestión de salidas automatizadas basadas en horarios fijos.
+                    </p>
                 </div>
                 <Button label="Programar Viaje" icon="pi pi-plus" @click="openNew"
                     class="!bg-indigo-600 !border-none !rounded-xl !px-6 !py-3 shadow-lg shadow-indigo-500/20" />
@@ -103,14 +100,14 @@ const deleteViaje = (id) => {
             <DataTable :value="viajes" paginator :rows="10" class="p-datatable-atlantis" responsiveLayout="stack">
                 <Column field="id_viaje" header="ID" class="w-16 text-slate-500 text-xs font-mono"></Column>
 
-                <Column header="RUTA">
+                <Column header="RUTA / HORARIO FIJO">
                     <template #body="{ data }">
                         <div class="flex flex-col">
                             <span class="text-white font-semibold">
                                 {{ data.ruta?.origen?.nombre }} ➔ {{ data.ruta?.destino?.nombre }}
                             </span>
-                            <span class="text-[10px] text-indigo-950 uppercase tracking-widest font-bold">
-                                Ruta #{{ data.id_ruta }}
+                            <span class="text-[10px] text-indigo-400 uppercase tracking-widest font-bold mt-0.5">
+                                Itinerario #{{ data.id_itinerario }}
                             </span>
                         </div>
                     </template>
@@ -125,11 +122,13 @@ const deleteViaje = (id) => {
                     </template>
                 </Column>
 
-                <Column header="SALIDA">
+                <Column header="SALIDA CRONOGRAMA">
                     <template #body="{ data }">
                         <div class="flex flex-col">
                             <span class="text-white text-sm font-mono">{{ data.fecha_salida }}</span>
-                            <span class="text-slate-500 text-xs">{{ data.hora_salida }}</span>
+                            <span class="text-emerald-400 text-xs font-semibold flex items-center gap-1 mt-0.5">
+                                <i class="pi pi-clock text-[10px]"></i> {{ data.hora_salida }}
+                            </span>
                         </div>
                     </template>
                 </Column>
@@ -159,18 +158,39 @@ const deleteViaje = (id) => {
                 content: { class: 'bg-[#1a1d2b] text-white p-6' }
             }">
 
-            <form @submit.prevent="submit" class="grid grid-cols-1 gap-6 pt-2">
+            <form @submit.prevent="submit" class="grid grid-cols-1 gap-5 pt-2">
+
                 <div class="flex flex-col gap-2">
-                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Seleccionar Ruta</label>
-                    <Dropdown v-model="form.id_ruta" :options="rutas" optionValue="id_ruta"
-                        placeholder="Origen - Destino" class="w-full !bg-[#0f111a] !border-white/10">
-                        <template #option="slotProps" class="text-gray-300">
-                            {{ slotProps.option.origen?.nombre }} ➔ {{ slotProps.option.destino?.nombre }}
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Horario Fijo / Ruta
+                        (Itinerario)</label>
+                    <Dropdown v-model="form.id_itinerario" :options="props.itinerarios" optionValue="id_itinerario"
+                        placeholder="Seleccione la salida programada" class="w-full !bg-[#0f111a] !border-white/10">
+
+                        <template #option="slotProps">
+                            <div class="flex justify-between items-center w-full text-slate-300">
+                                <span>{{ slotProps.option.ruta?.origen?.nombre }} ➔ {{
+                                    slotProps.option.ruta?.destino?.nombre }}</span>
+                                <span
+                                    class="bg-indigo-950 text-indigo-300 font-mono text-xs px-2 py-1 rounded border border-indigo-500/20">
+                                    {{ slotProps.option.hora_salida ? slotProps.option.hora_salida.substring(0, 5) : ''
+                                    }}
+                                </span>
+                            </div>
                         </template>
+
                         <template #value="slotProps">
-                            <div v-if="slotProps.value">
-                                {{rutas.find(r => r.id_ruta === slotProps.value)?.origen?.nombre}} ➔
-                                {{rutas.find(r => r.id_ruta === slotProps.value)?.destino?.nombre}}
+                            <div v-if="slotProps.value"
+                                class="flex justify-between items-center w-full text-white pr-4">
+                                <span>
+                                    {{props.itinerarios?.find(i => i.id_itinerario ===
+                                    slotProps.value)?.ruta?.origen?.nombre }} ➔
+                                    {{props.itinerarios?.find(i => i.id_itinerario ===
+                                    slotProps.value)?.ruta?.destino?.nombre }}
+                                </span>
+                                <span class="text-emerald-400 font-mono font-bold">
+                                    ({{props.itinerarios?.find(i => i.id_itinerario ===
+                                        slotProps.value)?.hora_salida?.substring(0, 5) }})
+                                </span>
                             </div>
                             <span v-else>{{ slotProps.placeholder }}</span>
                         </template>
@@ -179,10 +199,16 @@ const deleteViaje = (id) => {
 
                 <div class="grid grid-cols-2 gap-4">
                     <div class="flex flex-col gap-2">
-                        <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Bus</label>
+                        <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Bus Asignado</label>
                         <Dropdown v-model="form.id_bus" :options="buses" optionLabel="placa" optionValue="id_bus"
+                            placeholder="Seleccione placa" :class="{ 'p-invalid': form.errors.id_bus }"
                             class="w-full !bg-[#0f111a] !border-white/10" />
+
+                        <small v-if="form.errors.id_bus" class="text-red-400 text-xs font-semibold mt-1">
+                            {{ form.errors.id_bus }}
+                        </small>
                     </div>
+
                     <div class="flex flex-col gap-2">
                         <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Estado</label>
                         <Dropdown v-model="form.estado" :options="estados" optionLabel="label" optionValue="value"
@@ -190,23 +216,16 @@ const deleteViaje = (id) => {
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4">
-                    <div class="flex flex-col gap-2">
-                        <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Fecha Salida</label>
-                        <input type="date" v-model="form.fecha_salida"
-                            class="w-full !bg-[#0f111a] !border-white/10 !text-white rounded-lg p-2 outline-none" />
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Hora Salida</label>
-                        <input type="time" v-model="form.hora_salida"
-                            class="w-full !bg-[#0f111a] !border-white/10 !text-white rounded-lg p-2 outline-none" />
-                    </div>
+                <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-slate-500 uppercase tracking-widest">Fecha del Viaje</label>
+                    <input type="date" v-model="form.fecha_salida"
+                        class="w-full !bg-[#0f111a] border border-white/10 !text-white rounded-lg p-2 outline-none focus:border-indigo-500 transition-all font-mono" />
                 </div>
 
                 <div class="flex justify-end gap-3 mt-4">
                     <Button label="Cancelar" text severity="secondary" @click="displayModal = false"
                         class="!text-slate-400" />
-                    <Button :label="editMode ? 'Actualizar' : 'Guardar'" type="submit" icon="pi pi-check"
+                    <Button :label="editMode ? 'Actualizar Viaje' : 'Confirmar Salida'" type="submit" icon="pi pi-check"
                         :loading="form.processing" class="!bg-indigo-600 !border-none !rounded-xl" />
                 </div>
             </form>

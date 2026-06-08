@@ -1,23 +1,50 @@
 <?php
 
 use App\Http\Controllers\{
-    TerminalController, MetodoPagoController, TipoMantenimientoController,
-    EmpleadoController, ClienteController, RoleController,
-    BusController, RutaController, ViajeController, AsignacionController,
-    BoletoController, FacturaController, DetalleFacturaController,
-    EncomiendaController, MantenimientoController, NotificacionController,
-    RespaldoController, ProfileController, UserController,
+    TerminalController,
+    MetodoPagoController,
+    TipoMantenimientoController,
+    EmpleadoController,
+    ClienteController,
+    RoleController,
+    BusController,
+    RutaController,
+    ViajeController,
+    AsignacionController,
+    BoletoController,
+    FacturaController,
+    DetalleFacturaController,
+    EncomiendaController,
+    MantenimientoController,
+    NotificacionController,
+    RespaldoController,
+    ProfileController,
+    UserController,
     ClienteDashboardController,
+    VentaBoletoController,
+    ItinerarioController,
+    DashboardController,
 };
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 // ─── Rutas Públicas ───────────────────────────────────────────────────────────
+Route::get('/login', function () {
+    return Inertia::render('RegisterLogin');
+    // Nota: 'RegisterLogin' asume que tu archivo está en resources/js/Pages/RegisterLogin.vue
+});
 
-Route::get('/', fn () => Inertia::render('Welcome'))->name('home');
+// ══ RUTAS PÚBLICAS — Welcome ══
+Route::get('/',           fn() => Inertia::render('Welcome/Index'))->name('home');
+Route::get('/destinos',   fn() => Inertia::render('Welcome/Destinos'))->name('destinos');
+Route::get('/horarios',   fn() => Inertia::render('Welcome/Horarios'))->name('horarios');
+Route::get('/servicios',  fn() => Inertia::render('Welcome/Servicios'))->name('servicios');
+Route::get('/flota',      fn() => Inertia::render('Welcome/Nuestraflota'))->name('flota');
+Route::get('/sucursales', fn() => Inertia::render('Welcome/Sucursales'))->name('sucursales');
+Route::get('/contacto',   fn() => Inertia::render('Welcome/Contacto'))->name('contacto');
 
-Route::get('/acceso', fn () => Inertia::render('LoginRegister', [
+Route::get('/acceso', fn() => Inertia::render('LoginRegister', [
     'canLogin'       => Route::has('login'),
     'canRegister'    => Route::has('register'),
     'laravelVersion' => Application::VERSION,
@@ -56,6 +83,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('boletos',     BoletoController::class);
         Route::resource('encomiendas', EncomiendaController::class);
         Route::resource('facturas',    FacturaController::class);
+        Route::resource('ventas', VentaBoletoController::class);
+        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::post('/ventas/cliente-express', [VentaBoletoController::class, 'registrarClienteExpress'])
+            ->name('ventas.clienteExpress');
     });
 
     // ── Configuración Técnica (Solo Admin) ────────────────────────────────────
@@ -71,8 +102,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('metodos-pago',        MetodoPagoController::class);
         Route::resource('notificaciones',      NotificacionController::class);
         Route::resource('detalles-factura',    DetalleFacturaController::class);
-        Route::resource('respaldos',           RespaldoController::class);
+        // routes/web.php
+        Route::post('respaldos/undo', [RespaldoController::class, 'undo'])->name('respaldos.undo');
+        Route::resource('respaldos', RespaldoController::class);
+        Route::resource('itinerarios',         ItinerarioController::class);
     });
 });
 
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

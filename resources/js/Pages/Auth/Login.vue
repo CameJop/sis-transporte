@@ -73,8 +73,7 @@ const submit = () => {
                         placeholder="••••••••"
                     />
                     <button type="button" @click="showPassword = !showPassword" class="eye-btn">
-                        <span v-if="!showPassword">😣</span>
-                        <span v-else>🙂</span>
+                        <i :class="['bi', showPassword ? 'bi-eye' : 'bi-eye-slash']"></i>
                     </button>
                 </div>
                 <InputError class="mt-1" :message="form.errors.password" />

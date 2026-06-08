@@ -15,12 +15,18 @@ class EncomiendaController extends Controller
     {
         return Inertia::render('Encomiendas/Index', [
             'encomiendas' => Encomienda::with([
-                'viaje.ruta.origen', 
-                'viaje.ruta.destino', 
-                'remitente', 
+                'viaje.itinerario.ruta.origen',
+                'viaje.itinerario.ruta.destino',
+                'remitente',
                 'destinatario'
             ])->latest('id_encomienda')->get(),
-            'viajes' => Viaje::with(['ruta.origen', 'ruta.destino'])->get(),
+
+            'viajes' => Viaje::with([
+                'itinerario.ruta.origen',
+                'itinerario.ruta.destino',
+                'bus'
+            ])->where('estado', 'PROGRAMADO')->get(),
+
             'clientes' => Cliente::all()
         ]);
     }
@@ -44,7 +50,7 @@ class EncomiendaController extends Controller
     public function update(Request $request, $id)
     {
         $encomienda = Encomienda::findOrFail($id);
-        
+
         $data = $request->validate([
             'id_viaje'                => 'required|exists:VIAJE,id_viaje',
             'id_cliente_remitente'    => 'required|exists:CLIENTE,id_cliente',
