@@ -26,6 +26,7 @@ use App\Http\Controllers\{
     DashboardController,
 };
 use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -58,14 +59,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard: redirige según rol e inyecta props del perfil
     Route::get('/dashboard', function () {
         if (auth()->user()->hasAnyRole(['admin', 'empleado'])) {
-            return Inertia::render('Index', [
-                'mustVerifyEmail' => request()->user() instanceof \Illuminate\Contracts\Auth\MustVerifyEmail,
-                'status' => session('status'),
-            ]);
+            return app(DashboardController::class)->index(request());
         }
         return app(ClienteDashboardController::class)->index(request());
     })->name('dashboard');
 
+    Route::get('/mis-datos', [ClienteDashboardController::class, 'index'])
+        ->name('cliente.index')
+        ->middleware(['auth']);
     // Actualizar datos del pasajero (teléfono y email del cliente)
     Route::patch('/cliente/perfil', [ClienteDashboardController::class, 'updatePerfil'])
         ->name('cliente.updatePerfil');
@@ -84,7 +85,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::resource('encomiendas', EncomiendaController::class);
         Route::resource('facturas',    FacturaController::class);
         Route::resource('ventas', VentaBoletoController::class);
-        Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::post('/ventas/cliente-express', [VentaBoletoController::class, 'registrarClienteExpress'])
             ->name('ventas.clienteExpress');
     });
